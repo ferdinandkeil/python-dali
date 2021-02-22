@@ -4,7 +4,9 @@ from dali.address import Broadcast, BroadcastUnaddressed, Group, Short
 from dali.command import Command
 from dali.gear import general
 from dali.sequences import progress
+from dali.memory import diagnostics, energy, maintenance, oem
 import random
+import inspect
 
 _yes = 0xff
 
@@ -31,6 +33,15 @@ class Gear:
         self.dtr0 = 0
         self.dtr1 = 0
         self.dtr2 = 0
+        self.memory = {
+            1:   oem.BANK_1,
+            202: energy.BANK_202,
+            203: energy.BANK_203,
+            204: energy.BANK_204,
+            205: diagnostics.BANK_205,
+            206: diagnostics.BANK_206,
+            207: maintenance.BANK_207
+        }
 
     def _next_random_address(self):
         if self.random_preload:
@@ -162,6 +173,18 @@ class Gear:
             self.dtr1 = cmd.param
         elif isinstance(cmd, general.DTR2):
             self.dtr2 = cmd.param
+        elif isinstance(cmd, general.ReadMemoryLocation):
+            try:
+                memory_value = self.memory[self.dtr1].locations[self.dtr0].default or 0
+            except KeyError:
+                # return nothing when trying to read non-existent
+                # memory location
+                pass
+            else:
+                return memory_value
+            finally:
+                # increment DTR0 but limit to 0xFF
+                self.dtr0 = min(self.dtr0+1, 255)
 
 class Bus:
     """A DALI bus
