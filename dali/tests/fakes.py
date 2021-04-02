@@ -6,7 +6,6 @@ from dali.gear import general
 from dali.sequences import progress
 from dali.memory import diagnostics, energy, maintenance, oem
 import random
-import inspect
 
 _yes = 0xff
 
@@ -18,7 +17,11 @@ class Gear:
     backward frame.
     """
     def __init__(self, shortaddr=None, groups = set(),
-                 devicetypes = [], random_preload=[]):
+                 devicetypes = [], random_preload=[],
+                 memory_banks=[oem.BANK_1, energy.BANK_202,
+                 energy.BANK_203, energy.BANK_204,
+                 diagnostics.BANK_205, diagnostics.BANK_206,
+                 maintenance.BANK_207]):
         self.shortaddr = shortaddr
         self.scenes = [255] * 16
         self.groups = set(groups)
@@ -33,15 +36,7 @@ class Gear:
         self.dtr0 = 0
         self.dtr1 = 0
         self.dtr2 = 0
-        self.memory = {
-            1:   oem.BANK_1,
-            202: energy.BANK_202,
-            203: energy.BANK_203,
-            204: energy.BANK_204,
-            205: diagnostics.BANK_205,
-            206: diagnostics.BANK_206,
-            207: maintenance.BANK_207
-        }
+        self.memory = {bank.address: bank for bank in memory_banks}
 
     def _next_random_address(self):
         if self.random_preload:
@@ -175,8 +170,8 @@ class Gear:
             self.dtr2 = cmd.param
         elif isinstance(cmd, general.ReadMemoryLocation):
             try:
-                memory_value = self.memory[self.dtr1].locations[self.dtr0].default or 0
-            except KeyError:
+                memory_value = self.memory[self.dtr1].locations[self.dtr0].memory_location.default or 0
+            except (KeyError, AttributeError):
                 # return nothing when trying to read non-existent
                 # memory location
                 pass
