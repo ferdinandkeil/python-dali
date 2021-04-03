@@ -89,7 +89,7 @@ class MemoryBank:
             except MemoryLocationNotImplemented:
                 pass
             else:
-                result[memory_value.name] = r
+                result[memory_value] = r
         return result
     
     def latch(self, addr):
@@ -271,6 +271,13 @@ class MemoryValue:
         else:
             return False
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        class_name = '.'.join([self.__class__.__module__ or '', self.__class__.__name__])
+        return f'<{class_name} object named {self.name}>'
+
 class NumericValue(MemoryValue):
 
     """Unit of the numeric value. Set to one if no unit is given."""
@@ -286,7 +293,8 @@ class NumericValue(MemoryValue):
 class ScaledNumericValue(NumericValue):
 
     def _to_value(self, raw):
-        return int.from_bytes(raw[1:], 'big') * 10.**raw[0]
+        scaling_factor = 10.**int.from_bytes(bytes([raw[0],]), 'big', signed=True)
+        return int.from_bytes(raw[1:], 'big') * scaling_factor
 
 class FixedScaleNumericValue(NumericValue):
 
