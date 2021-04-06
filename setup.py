@@ -22,6 +22,7 @@ setup(
         'dali.driver',
         'dali.gear',
         'dali.tests',
+        'dali.memory',
     ],
     extras_require={
         'usb': ['pyusb'],
